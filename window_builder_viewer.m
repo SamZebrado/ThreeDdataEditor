@@ -14,7 +14,9 @@ p_hndl.set_coords = @set_coords;                                      % change c
 p_hndl.redraw = @redraw;                                                    % redraw all subplots
 
 %% create figure structure
-p_hndl.figure = figure('DeleteFcn',@DeleteFcn,...
+p_hndl.figure = figure(...
+    'CreateFcn',@FigureCreateFcn,...
+    'DeleteFcn',@DeleteFcn,...
     'KeyPressFcn',@KeyPressFcn,...
     'KeyReleaseFcn',@KeyReleaseFcn);
 %
@@ -85,7 +87,7 @@ p_hndl.coords = [1,1,1];
         proplist = [common_proplist];
         set(gca,'Children',imagesc(imag_data,'HitTest','off'),proplist{:})% to hit the axes instead of the image when clicked
         title(TitleText);
-         % <a flaw: other properties will not be resume>
+        % <a flaw: other properties will not be resume>
         % coronal view: plot the x-z plane
         imag_data = permute(data(:,y,:),[1,3,2]);
         subplot(s_cor);
@@ -102,22 +104,70 @@ p_hndl.coords = [1,1,1];
         title(TitleText);
     end
 %% nested functions: interactivity
+% figure properties
+
+    function DeleteFcn(src,eventdata)
+        % evoked when the figure is closed
+        clear_pers();
+    end
+
+    function FigureCreateFcn(src,eventdata)
+        % initialize
+        initialzeStates(src,{'shiftState','controlState','altState'});
+    end
+    function initialzeStates(src,statelist,varargin)
+        if nargin>2
+            val = varargin{1};
+        else
+            val = num2cell(false(size(statelist)));
+        end
+        UserData = get(src,'UserData');
+        for i_state = 1:length(statelist)
+            statename = statelist{i_state};
+            if ~isfield(UserData,statename)
+                UserData.(statename)= val{i_state}; set(src,'UserData',UserData)
+            end
+        end
+    end
 % keyboard shotcuts
     function KeyPressFcn(src,KeyData)
-        % set flags for shift, ctrl, ...
-        Key = KeyData.Key;
-        UserData = get(src,'UserData');
-        if ~isfield(UserData,'shiftState')
-            UserData.shiftState = false; set(src,'UserData',UserData)
-        end
         if qDebug
+            UserData = get(src,'UserData');
             fprintf( 'Key %s Pressed!\nShift State: %i\n',KeyData.Key,UserData.shiftState)
         end
+        
+        % function keys to check
+        keyNames = {'shift','control','alt'};
+        stateNames = strcat(keyNames,'State');
+        stateVal = true;
+        for i_statekey = 1:length(keyNames)
+            callback_updateKeyState(src,KeyData,keyNames{i_statekey},stateNames{i_statekey},stateVal)
+        end
+        % moving keys
+        movingKeys(src,KeyData);
+    end
+    function KeyReleaseFcn(src,KeyData)
+        fprintf( 'Key %s Released!\n',KeyData.Key)
+        % function keys to check
+        keyNames = {'shift','control','alt'};
+        stateNames = strcat(keyNames,'State');
+        stateVal = false;
+        for i_statekey = 1:length(keyNames)
+            callback_updateKeyState(src,KeyData,keyNames{i_statekey},stateNames{i_statekey},stateVal)
+        end
+    end
+
+    function callback_updateKeyState(src,KeyData,keyName,stateName,stateVal)
+        UserData = get(src,'UserData');
+        if strcmp(KeyData.Key,keyName)
+            UserData.(stateName) = stateVal; set(src,'UserData',UserData)
+        end
+    end
+
+    function movingKeys(src,KeyData)
+        UserData = get(src,'UserData');
+        Key = KeyData.Key;
         switch Key
-            case 'shift'
-                if ~UserData.shiftState
-                    UserData.shiftState = true; set(src,'UserData',UserData)
-                end
             case {'uparrow','downarrow'}
                 if UserData.shiftState
                     set_coords(p_hndl.coords+((Key(1)=='u')*2-1)*[0,1,0]);
@@ -128,24 +178,6 @@ p_hndl.coords = [1,1,1];
                 set_coords(p_hndl.coords+((Key(1)=='r')*2-1)*[1,0,0]);
         end
         
-    end
-    function KeyReleaseFcn(src,KeyData)
-        fprintf( 'Key %s Released!\n',KeyData.Key)
-        
-        UserData = get(src,'UserData');
-        if ~isfield(UserData,'shiftState')
-            UserData.shiftState = false; set(src,'UserData',UserData)
-        end
-        switch KeyData.Key
-            case 'shift'
-                if UserData.shiftState
-                    UserData.shiftState = false; set(src,'UserData',UserData)
-                end
-        end
-    end
-    function DeleteFcn(src,eventdata)
-        % evoked when the figure is closed
-        clear_pers();
     end
 %% nested functions: handle controls
     function clear_pers()
