@@ -1,6 +1,7 @@
 function hndl = window_builder_viewer()
 %% create window if called for the first time, return existing window if has
 % been called before.
+qDebug = true;
 persistent p_hndl% persistent handle
 if ~isempty(p_hndl)
     hndl = p_hndl;
@@ -13,7 +14,9 @@ p_hndl.set_coords = @set_coords;                                      % change c
 p_hndl.redraw = @redraw;                                                    % redraw all subplots
 
 %% create figure structure
-p_hndl.figure = figure('DeleteFcn',p_hndl.clear_pers);
+p_hndl.figure = figure('DeleteFcn',@DeleteFcn,...
+    'KeyPressFcn',@KeyPressFcn,...
+    'KeyReleaseFcn',@KeyReleaseFcn);
 %
 s_sag = subplot(2,2,1,...
     'Xdir','reverse'... to plot front to the left
@@ -31,7 +34,8 @@ p_hndl.subplots.s_sag = s_sag;
 p_hndl.subplots.s_cor = s_cor;
 p_hndl.subplots.s_hor = s_hor;
 
-p_hndl.coords = [];
+p_hndl.data = zeros([1,1,1]);
+p_hndl.coords = [1,1,1];
 %% viewing functions
     function set_data(data)
         % direction of data:
@@ -45,10 +49,16 @@ p_hndl.coords = [];
     function set_coords(varargin)
         switch nargin
             case 1
-                p_hndl.coords = varargin{1};
+                coords = varargin{1};
             case 3
-                p_hndl.coords = cell2mat(varargin(:)');
+                coords = cell2mat(varargin(:)');
         end
+        % avoid exceeding data limits
+        coords = max([1,1,1],coords);
+        coords = min(size(p_hndl.data,1,2,3),coords);
+        
+        p_hndl.coords = coords;
+        redraw();
     end
     function redraw()
         data = p_hndl.data;
@@ -58,21 +68,85 @@ p_hndl.coords = [];
         z = coords(3);
         % <unsolved: imagesc will cancel the axis title and related properties>
         
+        if qDebug
+            fprintf('Redrawing at coords [%i, %i, %i]\n',x,y,z)
+        end
+        v_max = nanmax(data(:));
+        v_min = nanmin(data(:));
+        if v_max ==v_min
+            v_max = v_max+1;
+        end
+        common_proplist = {'CLim',[v_min,v_max]};
+        
         % sagital view: plot the y-z plane
         imag_data = permute(data(x,:,:),[2,3,1]);
         subplot(s_sag);
-        imagesc(imag_data);
+        TitleText = sprintf('sagittal\nx = %i',x);
+        proplist = [common_proplist];
+        set(gca,'Children',imagesc(imag_data,'HitTest','off'),proplist{:})% to hit the axes instead of the image when clicked
+        title(TitleText);
+         % <a flaw: other properties will not be resume>
         % coronal view: plot the x-z plane
         imag_data = permute(data(:,y,:),[1,3,2]);
         subplot(s_cor);
-        imagesc(imag_data);
+        TitleText = sprintf('coronal\ny = %i',y);
+        proplist = [common_proplist];
+        set(gca,'Children',imagesc(imag_data,'HitTest','off'),proplist{:});
+        title(TitleText);
         % horizontal view: plot the x-y plane
         imag_data = data(:,:,z);
         subplot(s_hor);
-        imagesc(imag_data);
+        TitleText = sprintf('horizontal\nz = %i',z);
+        proplist = [common_proplist];
+        set(gca,'Children',imagesc(imag_data,'HitTest','off'),proplist{:});
+        title(TitleText);
     end
 %% nested functions: interactivity
-
+% keyboard shotcuts
+    function KeyPressFcn(src,KeyData)
+        % set flags for shift, ctrl, ...
+        Key = KeyData.Key;
+        UserData = get(src,'UserData');
+        if ~isfield(UserData,'shiftState')
+            UserData.shiftState = false; set(src,'UserData',UserData)
+        end
+        if qDebug
+            fprintf( 'Key %s Pressed!\nShift State: %i\n',KeyData.Key,UserData.shiftState)
+        end
+        switch Key
+            case 'shift'
+                if ~UserData.shiftState
+                    UserData.shiftState = true; set(src,'UserData',UserData)
+                end
+            case {'uparrow','downarrow'}
+                if UserData.shiftState
+                    set_coords(p_hndl.coords+((Key(1)=='u')*2-1)*[0,1,0]);
+                else
+                    set_coords(p_hndl.coords+((Key(1)=='u')*2-1)*[0,0,1]);
+                end
+            case {'leftarrow','rightarrow'}
+                set_coords(p_hndl.coords+((Key(1)=='r')*2-1)*[1,0,0]);
+        end
+        
+    end
+    function KeyReleaseFcn(src,KeyData)
+        fprintf( 'Key %s Released!\n',KeyData.Key)
+        
+        UserData = get(src,'UserData');
+        if ~isfield(UserData,'shiftState')
+            UserData.shiftState = false; set(src,'UserData',UserData)
+        end
+        switch KeyData.Key
+            case 'shift'
+                if UserData.shiftState
+                    UserData.shiftState = false; set(src,'UserData',UserData)
+                end
+        end
+    end
+    function DeleteFcn(src,eventdata)
+        % evoked when the figure is closed
+        clear_pers();
+    end
 %% nested functions: handle controls
     function clear_pers()
         %
