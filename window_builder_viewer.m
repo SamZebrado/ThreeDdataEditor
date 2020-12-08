@@ -23,7 +23,6 @@ s_sag = subplot(2,2,1,...
 title('sagittal');% title will be used later to pick subplot, through handles.Title.Text.string
 %
 s_cor = subplot(2,2,2,'Title',text('String','coronal'),...% this kind of calling cannot be directly used when no subplots exists in the figure
-    'Xdir','reverse',... to plot right to the left (viewing the data from front toward back)
     'ButtonDownFcn',@COR_ButtonDown...
     );
 %
