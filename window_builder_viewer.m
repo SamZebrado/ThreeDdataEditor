@@ -1,70 +1,88 @@
-function hndl = window_builder_viewer()
+function viewer_hndl = window_builder_viewer()
 %% create window if called for the first time, return existing window if has
 % been called before.
 qDebug = true;
-persistent p_hndl% persistent handle
-if ~isempty(p_hndl)
-    hndl = p_hndl;
-    return;
-end
+
 %% outer-accessible nested functions: they look similar to methods of classes but they are not the same
-p_hndl.clear_pers = @clear_pers;                                            % clear persistent variables
-p_hndl.set_data = @set_data;
-p_hndl.set_coords = @set_coords;                                      % change coordinates of the cross hair
-p_hndl.redraw = @redraw;                                                    % redraw all subplots
+viewer_hndl.Methods.clear_pers = @clear_pers;                                            % clear persistent variables
+viewer_hndl.Methods.set_data = @set_data;
+viewer_hndl.Methods.set_coords = @set_coords;                                      % change coordinates of the cross hair
+viewer_hndl.Methods.redraw = @redraw;                                                    % redraw all subplots
 
 %% create figure structure
-p_hndl.figure = figure(...
+viewer_hndl.Objects.Figure = figure(...
     'CreateFcn',@FigureCreateFcn,...
     'DeleteFcn',@DeleteFcn,...
     'KeyPressFcn',@KeyPressFcn,...
     'KeyReleaseFcn',@KeyReleaseFcn);
 %
 s_sag = subplot(2,2,1,...
-    'Xdir','reverse'... to plot front to the left
+    'Xdir','reverse',... to plot front to the left
+    'ButtonDownFcn',@SAG_ButtonDown...
     );
 title('sagittal');% title will be used later to pick subplot, through handles.Title.Text.string
 %
 s_cor = subplot(2,2,2,'Title',text('String','coronal'),...% this kind of calling cannot be directly used when no subplots exists in the figure
-    'Xdir','reverse'... to plot right to the left (viewing the data from front toward back)
+    'Xdir','reverse',... to plot right to the left (viewing the data from front toward back)
+    'ButtonDownFcn',@COR_ButtonDown...
     );
 %
-s_hor = subplot(2,2,3,'Title',text('String','horizontal'));
+s_hor = subplot(2,2,3,...
+    'Title',text('String','horizontal'),...
+    'ButtonDownFcn',@HOR_ButtonDown...
+    );
 
 %% collect the handles (after all properties have been defined)
-p_hndl.subplots.s_sag = s_sag;
-p_hndl.subplots.s_cor = s_cor;
-p_hndl.subplots.s_hor = s_hor;
+viewer_hndl.Objects.Subplots.s_sag = s_sag;
+viewer_hndl.Objects.Subplots.s_cor = s_cor;
+viewer_hndl.Objects.Subplots.s_hor = s_hor;
 
-p_hndl.data = zeros([1,1,1]);
-p_hndl.coords = [1,1,1];
+viewer_hndl.ImgData.D3Data = zeros([1,1,1]);
+viewer_hndl.ViewPoint.Coords = [1,1,1];
 %% viewing functions
     function set_data(data)
         % direction of data:
         % x: left -> right
         % y: back -> front
         % z: bottom -> top
-        p_hndl.data = data;
+        viewer_hndl.ImgData.D3Data = data;
         % plot the current slice in each subplot
         redraw();
     end
     function set_coords(varargin)
+        %         set_coords([x,y,z])
+        %         set_coords(x,y,z)
+        %         set_coords({x,y,z})
+        % in the latter two casesx, y, z could be empty to maintain the
+        % original value
+        
         switch nargin
             case 1
                 coords = varargin{1};
-            case 3
-                coords = cell2mat(varargin(:)');
+            otherwise
+                coords = varargin;
+                coords(end+1:3) = {[]};
         end
+        % supporting set some coordinates empty to keep the original value
+        origin_coords = viewer_hndl.ViewPoint.Coords;
+        
+        if iscell(coords)
+            ind_empty = cellfun(@isempty,coords);
+            coords(ind_empty) = {nan};% set empty value as nan
+            coords = cell2mat(coords);
+            coords(ind_empty) = origin_coords(ind_empty);
+        end
+        
         % avoid exceeding data limits
         coords = max([1,1,1],coords);
-        coords = min(size(p_hndl.data,1,2,3),coords);
+        coords = min(size(viewer_hndl.ImgData.D3Data,1,2,3),coords);
         
-        p_hndl.coords = coords;
+        viewer_hndl.ViewPoint.Coords = coords;
         redraw();
     end
     function redraw()
-        data = p_hndl.data;
-        coords = p_hndl.coords;
+        data = viewer_hndl.ImgData.D3Data;
+        coords = viewer_hndl.ViewPoint.Coords;
         x = coords(1);
         y = coords(2);
         z = coords(3);
@@ -78,29 +96,30 @@ p_hndl.coords = [1,1,1];
         if v_max ==v_min
             v_max = v_max+1;
         end
-        common_proplist = {'CLim',[v_min,v_max]};
-        
+        proplist = {'CLim',[v_min,v_max]};
+        crossHairProp = {'Color','k','LineWidth',2};
         % sagital view: plot the y-z plane
         imag_data = permute(data(x,:,:),[2,3,1]);
-        subplot(s_sag);
+        subplot(s_sag,proplist{:});
         TitleText = sprintf('sagittal\nx = %i',x);
-        proplist = [common_proplist];
-        set(gca,'Children',imagesc(imag_data,'HitTest','off'),proplist{:})% to hit the axes instead of the image when clicked
+        replaceImg(gca,imag_data,{});
+        drawCrossHair(gca,[y,z],crossHairProp);
         title(TitleText);
         % <a flaw: other properties will not be resume>
         % coronal view: plot the x-z plane
         imag_data = permute(data(:,y,:),[1,3,2]);
         subplot(s_cor);
         TitleText = sprintf('coronal\ny = %i',y);
-        proplist = [common_proplist];
-        set(gca,'Children',imagesc(imag_data,'HitTest','off'),proplist{:});
+        replaceImg(gca,imag_data,{});
+        drawCrossHair(gca,[x,z],crossHairProp);
         title(TitleText);
+        
         % horizontal view: plot the x-y plane
         imag_data = data(:,:,z);
         subplot(s_hor);
         TitleText = sprintf('horizontal\nz = %i',z);
-        proplist = [common_proplist];
-        set(gca,'Children',imagesc(imag_data,'HitTest','off'),proplist{:});
+        replaceImg(gca,imag_data,{});
+        drawCrossHair(gca,[x,y],crossHairProp);
         title(TitleText);
     end
 %% nested functions: interactivity
@@ -170,21 +189,65 @@ p_hndl.coords = [1,1,1];
         switch Key
             case {'uparrow','downarrow'}
                 if UserData.shiftState
-                    set_coords(p_hndl.coords+((Key(1)=='u')*2-1)*[0,1,0]);
+                    set_coords(viewer_hndl.ViewPoint.Coords+((Key(1)=='u')*2-1)*[0,1,0]);
                 else
-                    set_coords(p_hndl.coords+((Key(1)=='u')*2-1)*[0,0,1]);
+                    set_coords(viewer_hndl.ViewPoint.Coords+((Key(1)=='u')*2-1)*[0,0,1]);
                 end
             case {'leftarrow','rightarrow'}
-                set_coords(p_hndl.coords+((Key(1)=='r')*2-1)*[1,0,0]);
+                set_coords(viewer_hndl.ViewPoint.Coords+((Key(1)=='r')*2-1)*[1,0,0]);
         end
         
+    end
+% mouse interactivity
+    function SAG_ButtonDown(src,eventdata)
+        if qDebug
+            fprintf('SAG clicked!\n')
+        end
+        yz  = round(eventdata.IntersectionPoint([1,2]));
+        set_coords([],yz(1),yz(2));
+    end
+    function COR_ButtonDown(src,eventdata)
+        if qDebug
+            fprintf('COR clicked!\n')
+        end
+        xz  = round(eventdata.IntersectionPoint([1,2]));
+        set_coords(xz(1),[],xz(2));
+    end
+    function HOR_ButtonDown(src,eventdata)
+        if qDebug
+            fprintf('HOR clicked!\n')
+        end
+        xy  = round(eventdata.IntersectionPoint([1,2]));
+        set_coords(xy(1),xy(2),[]);
     end
 %% nested functions: handle controls
     function clear_pers()
         %
         %
-        p_hndl = [];
+        viewer_hndl = [];
     end
 
-hndl = p_hndl;
+hndl = viewer_hndl;
+end
+function replaceImg(c_a,imag_data,proplist)
+hold on;% to keep all other properties of the axis
+imagesc(imag_data,'HitTest','off','Tag','Image',proplist{:});% to hit the axes instead of the image when clicked
+ind_img = find(strcmp(arrayfun(@(x)x.Tag,c_a.Children,'UniformOutput',false),'Image'));
+if length(ind_img)>1
+    % remove the most bottom image
+    delete(c_a.Children(ind_img(end)));
+end
+ax = size(imag_data);
+axis([0,ax(1),0,ax(2)]+0.5);
+hold off;
+end
+function drawCrossHair(c_a,ch,proplist)
+hold on;
+ax = axis;
+plot([ax([1,2]),NaN,ch([1,1])],[ch([2,2]),NaN,ax([3,4])],'Tag','CrossHair',proplist{:});
+ind_ch = find(strcmp(arrayfun(@(x)x.Tag,c_a.Children,'UniformOutput',false),'CrossHair'));
+if length(ind_ch)>1
+    delete(c_a.Children(ind_ch(end)));    
+end
+hold off;
 end

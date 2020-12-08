@@ -12,13 +12,11 @@ The ultimate version of this tool is expected to be like a brain-editing minecra
 It will be a long time before I hit the ultimate version of it, with only scattered weekends spent on it.    
 So, I will list some unimplemented updates here and if anyone is interested in building this tool with me, please feel free to join/fork it (I am not an expertise in Github, let me know if you need me to do something to let you join).  
 ## sz_3d_image_viewer.m
-1. add a cross hair to each subplot, marking the current position;
-2. add mouse-related interactivity;
-3. restructure the properties of the handle;
-4. fine-tune the figure and subplots' size;
-5. add selecting and highlight function to select a cube of data;
-6. put selected region in a new subplot (or a large background plot), visualize it in a clever way (using openGL to plot the voxels);
-7. add controls for visible data range;
+1. add methods to control the image and crosshair properties, e.g. line width, color range, ...
+2. fine-tune the figure and subplots' size;
+3. add selecting and highlight function to select a cube of data;
+4. put selected region in a new subplot (or a large background plot), visualize it in a clever way (using openGL to plot the voxels);
+5. add controls for visible data range;
 
 ## sz_3d_image_editor.m
 1. take care about the viewer and its data sharing with the control panel.
@@ -27,6 +25,11 @@ So, I will list some unimplemented updates here and if anyone is interested in b
 # Matlab Version
 I often use 2014b, but its losing control of font size in the GUI is really annoying. So, for this tool, I will use matlab 2020b, although with my best effort to avoid some strange grammar of this higher version.
 **However,** it seems that neuroelf could not work properly under matlab 2020b, so combining this tool with the neuroelf may fail.
+# Updates List
+## sz_3d_image_viewer.m
+1. add a cross hair to each subplot, marking the current position;
+2. add mouse-related interactivity;
+3. restructure the properties of the handle;
 
 # Open Source Declaration
 
