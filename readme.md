@@ -7,7 +7,7 @@ The ultimate version of this tool is expected to be like a brain-editing minecra
 **sz_3d_image_viewer**: create a window, with views along each of the three dimensions of a 3D image (e.g. data from T1.vmr), another window (control panel) will also be created to contain some controls for viewing.  
 **sz_3d_image_editor**: utilize sz_3d_image_viewer to view data, additional controls for data editing will be added to the control panel.  
 **function_lib\\**: some convenient functions; but I do not know how to put the function inside a subfolder and use them without repeatedly adding path, and without addpath of that subfolder. So no files have been put inside it yet.
-
+**voxel.m**: a really helpful function to plot voxels in 3D. It even supports alpha value! Downloaded from https://www.mathworks.com/matlabcentral/fileexchange/3280-voxel. Thanks to Suresh Joe the author!
 # Coming Updates
 It will be a long time before I hit the ultimate version of it, with only scattered weekends spent on it.    
 So, I will list some unimplemented updates here and if anyone is interested in building this tool with me, please feel free to join/fork it (I am not an expertise in Github, let me know if you need me to do something to let you join).  
@@ -15,7 +15,7 @@ So, I will list some unimplemented updates here and if anyone is interested in b
 1. add methods to control the image and crosshair properties, e.g. line width, color range, ...
 2. fine-tune the figure and subplots' size;
 3. add selecting and highlight function to select a cube of data;
-4. put selected region in a new subplot (or a large background plot), visualize it in a clever way (using openGL to plot the voxels);
+4. put selected region in a new subplot (or a large background plot), visualize it in a clever way (using openGL to plot the voxels);*with the help of the voxel.m, I believe we are quite closer to the ultimate goal!*
 5. add controls for visible data range;
 
 ## sz_3d_image_editor.m
