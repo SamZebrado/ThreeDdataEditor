@@ -8,7 +8,7 @@ viewer_hndl.Methods.clear_pers = @clear_pers;                                   
 viewer_hndl.Methods.set_data = @set_data;
 viewer_hndl.Methods.set_coords = @set_coords;                                      % change coordinates of the cross hair
 viewer_hndl.Methods.redraw = @redraw;                                                    % redraw all subplots
-
+viewer_hndl.Methods.set_any = @set_any;
 %% create figure structure
 viewer_hndl.Objects.Figure = figure(...
     'CreateFcn',@FigureCreateFcn,...
@@ -30,14 +30,17 @@ s_hor = subplot(2,2,3,...
     'Title',text('String','horizontal'),...
     'ButtonDownFcn',@HOR_ButtonDown...
     );
+s_explore = subplot(2,2,4);% the 3d view
 
 %% collect the handles (after all properties have been defined)
 viewer_hndl.Objects.Subplots.s_sag = s_sag;
 viewer_hndl.Objects.Subplots.s_cor = s_cor;
 viewer_hndl.Objects.Subplots.s_hor = s_hor;
+viewer_hndl.Objects.Subplots.s_explore = s_explore;
 
 viewer_hndl.ImgData.D3Data = zeros([1,1,1]);
 viewer_hndl.ViewPoint.Coords = [1,1,1];
+viewer_hndl.ExplorerMode = false;
 %% viewing functions
     function set_data(data)
         % direction of data:
@@ -120,6 +123,11 @@ viewer_hndl.ViewPoint.Coords = [1,1,1];
         replaceImg(gca,imag_data,{});
         drawCrossHair(gca,[x,y],crossHairProp);
         title(TitleText);
+        if viewer_hndl.ExplorerMode
+        subplot(s_explore);
+        drawVoxel3D(viewer_hndl,{});
+        title 'Explorer View'
+        end
     end
 %% nested functions: interactivity
 % figure properties
@@ -220,6 +228,9 @@ viewer_hndl.ViewPoint.Coords = [1,1,1];
         set_coords(xy(1),xy(2),[]);
     end
 %% nested functions: handle controls
+    function set_any(fld,val)
+        viewer_hndl.(fld) = val;
+    end
     function clear_pers()
         %
         %
@@ -249,4 +260,28 @@ if length(ind_ch)>1
     delete(c_a.Children(ind_ch(end)));    
 end
 hold off;
+end
+function drawVoxel3D(viewer_hndl,varargin)
+% not fully implemented: plot the voxels
+% just using voxel.m will use a lot of computing resources
+% one bug exist: using one_demo, each coords results in different explore
+% voxel densities for unknown reason
+data = viewer_hndl.ImgData.D3Data;
+coords = viewer_hndl.ViewPoint.Coords;
+data_sz = size(data);
+data_sz(end+1:3) = 1;
+[Y,X,Z] = meshgrid(1:data_sz(1),1:data_sz(2),1:data_sz(3));
+clr = 'k';
+size_ = [1,1,1];
+max_data = max(data(:));
+min_data = min(data(:));
+width_data = max_data-min_data;
+if width_data
+    alpha_ = (data-min_data)*0.618/width_data;
+else
+    alpha_ = min(abs(data),1); % all zeros or same value
+end
+hold off;
+arrayfun(@(x,y,z,a)voxel([x,y,z]-0.5*size_,size_,clr,a),X,Y,Z,alpha_);
+view(3)
 end

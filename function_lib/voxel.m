@@ -1,4 +1,4 @@
-function voxel(i,d,c,alpha);
+function voxel(start_,size_,c,alpha)
 
 %VOXEL function to draw a 3-D voxel in a 3-D plot
 %
@@ -24,26 +24,26 @@ function voxel(i,d,c,alpha);
 %   Suresh Joel Apr 15,2003
 %           Updated Feb 25, 2004
 
-switch(nargin),
+switch(nargin)
 case 0
     disp('Too few arguements for voxel');
     return;
 case 1
     l=1;    %default length of side of voxel is 1
     c='b';  %default color of voxel is blue
-case 2,
+case 2
     c='b';
-case 3,
+case 3
     alpha=1;
-case 4,
+case 4
     %do nothing
 otherwise
     disp('Too many arguements for voxel');
-end;
+end
 
-x=[i(1)+[0 0 0 0 d(1) d(1) d(1) d(1)]; ...
-        i(2)+[0 0 d(2) d(2) 0 0 d(2) d(2)]; ...
-        i(3)+[0 d(3) 0 d(3) 0 d(3) 0 d(3)]]';
+x=[start_(1)+[0 0 0 0 size_(1) size_(1) size_(1) size_(1)]; ...
+        start_(2)+[0 0 size_(2) size_(2) 0 0 size_(2) size_(2)]; ...
+        start_(3)+[0 size_(3) 0 size_(3) 0 size_(3) 0 size_(3)]]';
 for n=1:3,
     if n==3,
         x=sortrows(x,[n,1]);
