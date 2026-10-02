@@ -1,7 +1,7 @@
 # Status
 Historical MATLAB viewer prototype; the last recorded implementation changes are from December 2020. The editing component is not implemented. The roadmap below records ideas, not a current development commitment. No automated tests or cross-platform validation are available.
 
-For the available viewer demonstration, run `one_demo.m` from this repository directory in MATLAB. It uses synthetic random data. The legacy `sz_3d_image_viewer` wrapper is unverified and currently passes an argument to a control-panel function that accepts no arguments.
+For the available viewer demonstration, install MATLAB with Statistics and Machine Learning Toolbox, then run `one_demo.m` from this repository directory. The historical MATLAB target is R2020b; `window_builder_viewer.m` calls the toolbox functions `nanmax` and `nanmin` when redrawing the viewer. It uses synthetic random data. The legacy `sz_3d_image_viewer` wrapper is unverified and currently passes an argument to a control-panel function that accepts no arguments.
 
 # Background
 I plan to build something similar to the spm 3D data viewer and grant it tools to edit the data through clicking (just like editing T1.vmr in brain voyager). Of course, there are already successful viewers like xjview and neuroelf; however, it will be easier for me to write/modify a new one than to learn the prior settings.  
