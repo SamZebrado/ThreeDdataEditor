@@ -1,3 +1,10 @@
+# Status
+Historical MATLAB viewer prototype; the original viewer implementation dates from December 2020, with entry-point fixes in October 2026. The editing component is not implemented. The roadmap below records ideas, not a current development commitment. MATLAB runtime and cross-platform validation remain unverified.
+
+For the available viewer demonstration, install MATLAB with Statistics and Machine Learning Toolbox, then run `one_demo.m` from this repository directory. The historical MATLAB target is R2020b; `window_builder_viewer.m` calls the toolbox functions `nanmax` and `nanmin` when redrawing the viewer. The demo uses synthetic random data. The `sz_3d_image_viewer` wrapper creates a viewer and a placeholder control-panel window; its MATLAB runtime behavior remains unverified.
+
+Entry-point regression tests in `tests/test_viewer_entry_points.m` cover wrapper handles and creation, reuse, and reopening of the placeholder windows. Run `results = runtests('tests/test_viewer_entry_points.m'); assert(all([results.Passed]));` from this repository directory in MATLAB. These tests have not been executed in the maintenance environment, where MATLAB is unavailable; they do not validate image processing or rendering.
+
 # Background
 I plan to build something similar to the spm 3D data viewer and grant it tools to edit the data through clicking (just like editing T1.vmr in brain voyager). Of course, there are already successful viewers like xjview and neuroelf; however, it will be easier for me to write/modify a new one than to learn the prior settings.  
 Also I would like to use hotkeys while viewing and editing data.  
@@ -5,8 +12,8 @@ The ultimate version of this tool is expected to be like a brain-editing minecra
 
 # File Structure
 **sz_3d_image_viewer**: create a window, with views along each of the three dimensions of a 3D image (e.g. data from T1.vmr), another window (control panel) will also be created to contain some controls for viewing.  
-**sz_3d_image_editor**: utilize sz_3d_image_viewer to view data, additional controls for data editing will be added to the control panel.  
-**function_lib\\**: some convenient functions; but I do not know how to put the function inside a subfolder and use them without repeatedly adding path, and without addpath of that subfolder. So no files have been put inside it yet.
+**sz_3d_image_editor**: planned editing component; this file is not present in the repository.
+**function_lib/**: contains the third-party `voxel.m` helper. `pathSetup.m` adds this folder to the MATLAB path; `pathRemove.m` removes it.
 **voxel.m**: a really helpful function to plot voxels in 3D. It even supports alpha value! Downloaded from https://www.mathworks.com/matlabcentral/fileexchange/3280-voxel. Thanks to Suresh Joe the author!
 # Coming Updates
 It will be a long time before I hit the ultimate version of it, with only scattered weekends spent on it.    
