@@ -1,7 +1,9 @@
 # Status
-Historical MATLAB viewer prototype; the last recorded implementation changes are from December 2020. The editing component is not implemented. The roadmap below records ideas, not a current development commitment. No automated tests or cross-platform validation are available.
+Historical MATLAB viewer prototype; the original viewer implementation dates from December 2020, with entry-point fixes in October 2026. The editing component is not implemented. The roadmap below records ideas, not a current development commitment. MATLAB runtime and cross-platform validation remain unverified.
 
-For the available viewer demonstration, install MATLAB with Statistics and Machine Learning Toolbox, then run `one_demo.m` from this repository directory. The historical MATLAB target is R2020b; `window_builder_viewer.m` calls the toolbox functions `nanmax` and `nanmin` when redrawing the viewer. It uses synthetic random data. The legacy `sz_3d_image_viewer` wrapper is unverified and currently passes an argument to a control-panel function that accepts no arguments.
+For the available viewer demonstration, install MATLAB with Statistics and Machine Learning Toolbox, then run `one_demo.m` from this repository directory. The historical MATLAB target is R2020b; `window_builder_viewer.m` calls the toolbox functions `nanmax` and `nanmin` when redrawing the viewer. The demo uses synthetic random data. The `sz_3d_image_viewer` wrapper creates a viewer and a placeholder control-panel window; its MATLAB runtime behavior remains unverified.
+
+Entry-point regression tests in `tests/test_viewer_entry_points.m` cover wrapper handles and creation, reuse, and reopening of the placeholder windows. Run `results = runtests('tests/test_viewer_entry_points.m'); assert(all([results.Passed]));` from this repository directory in MATLAB. These tests have not been executed in the maintenance environment, where MATLAB is unavailable; they do not validate image processing or rendering.
 
 # Background
 I plan to build something similar to the spm 3D data viewer and grant it tools to edit the data through clicking (just like editing T1.vmr in brain voyager). Of course, there are already successful viewers like xjview and neuroelf; however, it will be easier for me to write/modify a new one than to learn the prior settings.  
